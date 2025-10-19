@@ -262,6 +262,19 @@ static int* get_encoded_code(const int* code, const int* walsh_code, size_t wals
 		goto l_end;
 	}
 
+	// (c0, c1, c2, c3)
+	//                                      *
+	// (w0, w1, w2, w3)
+	//                                      =
+	// (w0 * c0, w1 * c0, w2 * c0, w3 * c0,
+	//  w0 * c1, w1 * c1, w2 * c1, w3 * c1,
+	//  w0 * c2, w2 * c2, w3 * c2, w3 * c2,
+	//  w0 * c3, w2 * c3, w3 * c3, w3 * c3)
+	//                                      =
+	// (s0,  s1,  s2,  s3,  s4,
+	//  s5,  s6,  s7,  s8,  s9,
+	//  s10, s11, s12, s13, s14,
+	//  s15, s16)
 	size_t index = 0;
 	for (size_t i = 0; i < code_size; i++)
 	{
@@ -301,7 +314,9 @@ cdma_encoded_message_t*
 		goto l_fail;
 	}
 
+	// Size in bits of single message.
 	const size_t code_size = transmitter->prev_message_size * CDMA_CODE_LENGTH;
+	// Total encoded message size.
 	const size_t size = code_size * transmitter->base_station->walsh_codes_size;
 
 	encoded_message->size = size;
@@ -319,9 +334,12 @@ cdma_encoded_message_t*
 
 	for (size_t i = 0; i < transmitter->codes_size; i++)
 	{
+		// Code from station.
 		const int* code = transmitter->codes[i];
+		// Walsh single code size.
 		const size_t walsh_code_size = transmitter->base_station->walsh_codes_size;
 		const size_t walsh_codes_shift = walsh_code_size * i;
+		// Walsh code of station.
 		const int* walsh_code = transmitter->base_station->walsh_codes + walsh_codes_shift;
 		int* encoded = get_encoded_code(code, walsh_code, walsh_code_size, code_size);
 
@@ -349,6 +367,13 @@ cdma_encoded_message_t*
 		printf("\n");
 #endif
 
+		// (s0, s1, s2, s3, s4, s5, ...)
+		//                               +
+		// (s0, s1, s2, s3, s4, s5, ...)
+		//                               +
+		// . . . . . . . . . . . . . . .
+		//                               =
+		// (e0, e1, e2, e3, e4, e5, ...)
 		for (size_t j = 0; j < size; j++)
 		{
 			encoded_message->encoded[j] += encoded[j];
@@ -439,12 +464,17 @@ char* cdma_receiver_get(
 		goto l_fail;
 	}
 
+	// Size of one Walsh code.
 	const size_t walsh_code_size = receiver->base_station->walsh_codes_size;
+	// Encoded code size for one character.
 	const size_t single_code_size = CDMA_CODE_LENGTH * walsh_code_size;
+	// Total message size.
 	const size_t message_size = encoded_message->size / single_code_size;
+
 #ifdef CDMA_DEBUG
 	printf("[DEBUG] Receiver: Message size = %zu\n", message_size);
 #endif
+
 	message = calloc(message_size + 1, sizeof(char));
 
 	if (message == NULL)
@@ -473,6 +503,13 @@ char* cdma_receiver_get(
 	{
 		int data[CDMA_CODE_LENGTH] = { 0 };
 
+		// (d0, d1, d2, d3, d4, d5, d6, d7) * (c0, c1)
+		// ((d0, d1), (d2, d3), (d4, d5), (d6, d7)) * (c0, c1)
+		// ((d0 * c0 + d1 * c2),
+		//  (d2 * c0 + d3 * c1),
+		//  (d4 * c0 + d5 * c1),
+		// 	(d6 * c0 + d7 * c1)
+		// )
 		for (size_t j = 0; j < CDMA_CODE_LENGTH; j++)
 		{
 			int sum = 0;
@@ -507,6 +544,17 @@ char* cdma_receiver_get(
 		printf("\n");
 #endif
 
+		// (e0, e1, e2, e3, e4, e5, e6, e7)
+		// forall i, bi = 1 if ei > 0
+		// (b0, b1, b2, b3, b4, b5, b6)
+		// char = b0 << 7
+		//      | b1 << 6
+		//      | b2 << 5
+		//      | b3 << 4
+		//      | b4 << 3
+		//      | b5 << 2
+		//      | b6 << 1
+		//      | b7 << 0
 		char c = '\0';
 		for (size_t j = 0; j < CDMA_CODE_LENGTH; j++)
 		{
