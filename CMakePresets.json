@@ -1,0 +1,52 @@
+{
+  "version": 3,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 10,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "Base",
+      "description": "General preset that applies to all configurations.",
+      "hidden": true,
+      "binaryDir": "${sourceDir}/build/${presetName}",
+      "cacheVariables": {
+        "BUILD_WARN_AS_ERROR": "ON"
+      }
+    },
+    {
+      "name": "Release",
+      "description": "Optimize for speed - exclude debug information.",
+      "inherits": "Base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    },
+    {
+      "name": "Debug",
+      "description": "Disable optimizations - include debug information.",
+      "inherits": "Base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CDMA_DEBUG_MESSAGES": "ON"
+      }
+    },
+    {
+      "name": "RelWithDebInfo",
+      "description": "Optimize for speed - include debug information.",
+      "inherits": "Base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo"
+      }
+    },
+    {
+      "name": "Sanitized",
+      "description": "Debug build configuration - include sanitizers.",
+      "inherits": "Debug",
+      "cacheVariables": {
+        "BUILD_USE_SANITIZER": "ON"
+      }
+    }
+  ]
+}
