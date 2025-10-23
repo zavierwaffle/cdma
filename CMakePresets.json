@@ -10,7 +10,7 @@
       "name": "Base",
       "description": "General preset that applies to all configurations.",
       "hidden": true,
-      "binaryDir": "${sourceDir}/build/${presetName}",
+      "binaryDir": "${sourceDir}/cmake-build-${presetName}",
       "cacheVariables": {
         "BUILD_WARN_AS_ERROR": "ON"
       }
